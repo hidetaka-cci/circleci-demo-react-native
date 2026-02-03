@@ -55,7 +55,7 @@ workflows:
             name: node/default
             tag: '24.0'
           cache-version: v1
-          override-ci-command: npm run lint
+          run-command: lint
           filters:
             branches:
               ignore: main
@@ -72,7 +72,7 @@ workflows:
             name: node/default
             tag: '24.0'
           cache-version: v1
-          override-ci-command: npm run lint
+          run-command: lint
           filters:
             branches:
               only: main
