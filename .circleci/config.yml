@@ -58,6 +58,55 @@ jobs:
             - ~/.gradle/caches
             - ~/.gradle/wrapper
 
+  ios-build:
+    macos:
+      xcode: "15.4.0"
+    resource_class: macos.m1.medium
+    steps:
+      - checkout
+      - node/install:
+          node-version: "20.18.1"
+      - run:
+          name: Install dependencies
+          command: npm install
+      - run:
+          name: Generate ios directory
+          command: npx expo prebuild --platform ios
+      - restore_cache:
+          keys:
+            - cocoapods-v1-{{ checksum "ios/Podfile.lock" }}
+            - cocoapods-v1-
+      - run:
+          name: Install CocoaPods (if missing)
+          command: |
+            if command -v pod >/dev/null 2>&1; then
+              pod --version
+            else
+              sudo gem install cocoapods
+            fi
+      - run:
+          name: Install Pods
+          command: cd ios && pod install
+      - run:
+          name: Build iOS (Debug, Simulator)
+          command: |
+            WORKSPACE=$(ls -1 ios/*.xcworkspace | head -n 1)
+            SCHEME=$(xcodebuild -list -json -workspace "$WORKSPACE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["workspace"]["schemes"][0])')
+            xcodebuild \
+              -workspace "$WORKSPACE" \
+              -scheme "$SCHEME" \
+              -configuration Debug \
+              -sdk iphonesimulator \
+              -destination 'generic/platform=iOS Simulator' \
+              build
+      - save_cache:
+          key: cocoapods-v1-{{ checksum "ios/Podfile.lock" }}
+          paths:
+            - ios/Pods
+            - ios/Podfile.lock
+            - ~/.cocoapods
+            - ~/Library/Caches/CocoaPods
+
 workflows:
   ci:
     jobs:
@@ -87,6 +136,13 @@ workflows:
             branches:
               only: main
       - android-build:
+          requires:
+            - node/test
+          filters:
+            branches:
+              only: main
+
+      - ios-build:
           requires:
             - node/test
           filters:
