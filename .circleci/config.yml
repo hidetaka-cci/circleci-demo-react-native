@@ -62,6 +62,14 @@ jobs:
       xcode: "26.2.0"
     steps:
       - checkout
+
+      - run:
+          name: Check available Java versions
+          command: /usr/libexec/java_home -V
+      - run:
+          name: Install Java 21
+          command: |
+            brew install openjdk@21
       - run:
           name: Set Java version to 21
           command: |
