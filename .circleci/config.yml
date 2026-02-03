@@ -63,6 +63,14 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Set Java version to 21
+          command: |
+            echo 'export JAVA_HOME=$(/usr/libexec/java_home -v 21)' >> $BASH_ENV
+            source $BASH_ENV
+      - run:
+          name: Verify Java version
+          command: java -version
+      - run:
           name: Install dependencies
           command: npm install
       - run:
