@@ -1,0 +1,32 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.0.0
+  android: circleci/android@3.0.0
+
+workflows:
+  ci:
+    jobs:
+      - node/test:
+          pkg-manager: npm
+          filters:
+            branches:
+              ignore: main
+      - android/run-tests:
+          test-command: cd android && ./gradlew test
+          filters:
+            branches:
+              ignore: main
+
+  deploy:
+    jobs:
+      - node/test:
+          pkg-manager: npm
+          filters:
+            branches:
+              only: main
+      - android/build:
+          working_directory: android
+          filters:
+            branches:
+              only: main
