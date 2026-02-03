@@ -12,6 +12,31 @@ jobs:
       resource_class: large
     steps:
       - checkout
+      - run:
+          name: Debug - Check project structure
+          command: |
+            echo "=== Hypothesis A: Check if android directory exists after checkout ==="
+            pwd
+            ls -la
+            if [ -d "android" ]; then
+              echo "CONFIRMED: android directory exists"
+              ls -la android/ | head -10
+            else
+              echo "REJECTED: android directory does NOT exist after checkout"
+            fi
+            echo "=== Hypothesis B: Check if android is in .gitignore ==="
+            if grep -q "^/android$" .gitignore 2>/dev/null || grep -q "^android$" .gitignore 2>/dev/null; then
+              echo "CONFIRMED: android is in .gitignore"
+              grep -E "^/?android" .gitignore || echo "Pattern found in .gitignore"
+            else
+              echo "REJECTED: android not found in .gitignore"
+            fi
+            echo "=== Hypothesis C: Check if node_modules exists ==="
+            if [ -d "node_modules" ]; then
+              echo "CONFIRMED: node_modules exists"
+            else
+              echo "REJECTED: node_modules does NOT exist (npm install needed)"
+            fi
       - restore_cache:
           keys:
             - gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
@@ -19,7 +44,24 @@ jobs:
             - gradle-v1-
       - run:
           name: Run Android tests
-          command: cd android && ./gradlew test
+          command: |
+            echo "=== Hypothesis E: Attempt cd android ==="
+            if [ -d "android" ]; then
+              echo "CONFIRMED: android directory exists, proceeding with tests"
+              cd android && ./gradlew test
+            else
+              echo "REJECTED: android directory still does not exist"
+              echo "Attempting to generate android directory with expo prebuild..."
+              npm install
+              npx expo prebuild --platform android
+              if [ -d "android" ]; then
+                echo "CONFIRMED: android directory created successfully"
+                cd android && ./gradlew test
+              else
+                echo "REJECTED: Failed to create android directory"
+                exit 1
+              fi
+            fi
       - save_cache:
           key: gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
           paths:
@@ -32,6 +74,38 @@ jobs:
       resource_class: large
     steps:
       - checkout
+      - run:
+          name: Debug - Check project structure
+          command: |
+            echo "=== Hypothesis A: Check if android directory exists after checkout ==="
+            pwd
+            ls -la
+            if [ -d "android" ]; then
+              echo "CONFIRMED: android directory exists"
+              ls -la android/ | head -10
+            else
+              echo "REJECTED: android directory does NOT exist after checkout"
+            fi
+            echo "=== Hypothesis B: Check if android is in .gitignore ==="
+            if grep -q "^/android$" .gitignore 2>/dev/null || grep -q "^android$" .gitignore 2>/dev/null; then
+              echo "CONFIRMED: android is in .gitignore"
+              grep -E "^/?android" .gitignore || echo "Pattern found in .gitignore"
+            else
+              echo "REJECTED: android not found in .gitignore"
+            fi
+            echo "=== Hypothesis C: Check if node_modules exists ==="
+            if [ -d "node_modules" ]; then
+              echo "CONFIRMED: node_modules exists"
+            else
+              echo "REJECTED: node_modules does NOT exist (npm install needed)"
+            fi
+            echo "=== Hypothesis D: Check if package.json exists ==="
+            if [ -f "package.json" ]; then
+              echo "CONFIRMED: package.json exists"
+              cat package.json | grep -A 5 '"scripts"'
+            else
+              echo "REJECTED: package.json does NOT exist"
+            fi
       - restore_cache:
           keys:
             - gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
@@ -39,7 +113,24 @@ jobs:
             - gradle-v1-
       - run:
           name: Build Android Debug APK
-          command: cd android && ./gradlew assembleDebug
+          command: |
+            echo "=== Hypothesis E: Attempt cd android ==="
+            if [ -d "android" ]; then
+              echo "CONFIRMED: android directory exists, proceeding with build"
+              cd android && ./gradlew assembleDebug
+            else
+              echo "REJECTED: android directory still does not exist"
+              echo "Attempting to generate android directory with expo prebuild..."
+              npm install
+              npx expo prebuild --platform android
+              if [ -d "android" ]; then
+                echo "CONFIRMED: android directory created successfully"
+                cd android && ./gradlew assembleDebug
+              else
+                echo "REJECTED: Failed to create android directory"
+                exit 1
+              fi
+            fi
       - save_cache:
           key: gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
           paths:
