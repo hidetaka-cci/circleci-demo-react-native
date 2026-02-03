@@ -71,6 +71,25 @@ jobs:
           name: Verify Java version
           command: java -version
       - run:
+          name: Install Android SDK Command Line Tools
+          command: |
+            ANDROID_HOME=$HOME/Library/Android/sdk
+            mkdir -p $ANDROID_HOME/cmdline-tools
+            cd $ANDROID_HOME/cmdline-tools
+            wget https://dl.google.com/android/repository/commandlinetools-mac-11076708_latest.zip
+            unzip commandlinetools-mac-11076708_latest.zip
+            mv cmdline-tools latest
+            echo 'export ANDROID_HOME=$HOME/Library/Android/sdk' >> $BASH_ENV
+            echo 'export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH' >> $BASH_ENV
+            source $BASH_ENV
+      - run:
+          name: Accept Android SDK licenses
+          command: yes | sdkmanager --licenses
+      - run:
+          name: Install required Android SDK components
+          command: |
+            sdkmanager "platform-tools" "platforms;android-36" "build-tools;35.0.0"
+      - run:
           name: Install dependencies
           command: npm install
       - run:
