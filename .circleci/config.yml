@@ -35,7 +35,7 @@ jobs:
     executor:
       name: android/android_docker
       tag: "2026.02.1"
-      resource_class: xlarge
+      resource_class: 2xlarge
     steps:
       - checkout
       - node/install:
