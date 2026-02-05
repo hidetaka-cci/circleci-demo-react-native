@@ -37,6 +37,8 @@ jobs:
       tag: "2026.02.1"
     steps:
       - checkout
+      - node/install:
+          node-version: "22"
       - run:
           name: Install dependencies
           command: npm install
@@ -64,7 +66,7 @@ jobs:
     steps:
       - checkout
       - node/install:
-          node-version: "20.18.1"
+          node-version: "22"
       - run:
           name: Install dependencies
           command: npm install
