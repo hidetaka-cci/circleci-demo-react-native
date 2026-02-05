@@ -33,9 +33,7 @@ jobs:
             - ~/.gradle/wrapper
   android-build:
     executor:
-      name: android/android_machine
-      tag: "2024.01.1"
-      resource_class: xlarge
+      name: android/android_docker
     steps:
       - checkout
       - run:
