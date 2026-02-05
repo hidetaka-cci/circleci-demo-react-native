@@ -35,6 +35,7 @@ jobs:
     executor:
       name: android/android_docker
       tag: "2026.02.1"
+      resource_class: large
     steps:
       - checkout
       - node/install:
@@ -52,7 +53,10 @@ jobs:
             - gradle-v1-
       - run:
           name: Build Android Debug APK
-          command: cd android && ./gradlew assembleDebug
+          command: |
+            cd android
+            export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError"
+            ./gradlew assembleDebug --no-daemon --max-workers=2
       - save_cache:
           key: gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
           paths:
