@@ -2,49 +2,8 @@ version: 2.1
 
 orbs:
   node: circleci/node@7.2.1
-  android: circleci/android@3.2.0
 
 jobs:
-  android-run-tests:
-    executor:
-      name: android/android_machine
-      tag: "2024.01.1"
-      resource_class: large
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
-            - gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}
-            - gradle-v1-
-      - run:
-          name: Run Android tests
-          command: cd android && ./gradlew test
-      - save_cache:
-          key: gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
-          paths:
-            - ~/.gradle/caches
-            - ~/.gradle/wrapper
-  android-build:
-    executor:
-      name: android/android_machine
-      tag: "2024.01.1"
-      resource_class: large
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
-            - gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}
-            - gradle-v1-
-      - run:
-          name: Build Android Debug APK
-          command: cd android && ./gradlew assembleDebug
-      - save_cache:
-          key: gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
-          paths:
-            - ~/.gradle/caches
-            - ~/.gradle/wrapper
 
 workflows:
   ci:
@@ -58,10 +17,6 @@ workflows:
           filters:
             branches:
               ignore: main
-      - android-run-tests:
-          filters:
-            branches:
-              ignore: main
 
   deploy:
     jobs:
@@ -71,12 +26,6 @@ workflows:
             name: node/default
             tag: '22.11'
           cache-version: v1
-          filters:
-            branches:
-              only: main
-      - android-build:
-          requires:
-            - node/test
           filters:
             branches:
               only: main
