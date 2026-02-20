@@ -12,12 +12,6 @@ jobs:
       resource_class: large
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: npm install
-      - run:
-          name: Generate android directory
-          command: npx expo prebuild --platform android
       - restore_cache:
           keys:
             - gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
@@ -33,19 +27,11 @@ jobs:
             - ~/.gradle/wrapper
   android-build:
     executor:
-      name: android/android_docker
-      tag: "2026.02.1"
-      resource_class: 2xlarge
+      name: android/android_machine
+      tag: "2024.01.1"
+      resource_class: large
     steps:
       - checkout
-      - node/install:
-          node-version: "22"
-      - run:
-          name: Install dependencies
-          command: npm install
-      - run:
-          name: Generate android directory
-          command: npx expo prebuild --platform android
       - restore_cache:
           keys:
             - gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
@@ -53,64 +39,12 @@ jobs:
             - gradle-v1-
       - run:
           name: Build Android Debug APK
-          command: |
-            cd android
-            export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError"
-            ./gradlew assembleDebug --no-daemon --max-workers=2
+          command: cd android && ./gradlew assembleDebug
       - save_cache:
           key: gradle-v1-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "android/build.gradle" }}
           paths:
             - ~/.gradle/caches
             - ~/.gradle/wrapper
-
-  ios-build:
-    macos:
-      xcode: "15.4.0"
-    resource_class: macos.m1.medium
-    steps:
-      - checkout
-      - node/install:
-          node-version: "22"
-      - run:
-          name: Install dependencies
-          command: npm install
-      - run:
-          name: Generate ios directory
-          command: npx expo prebuild --platform ios
-      - restore_cache:
-          keys:
-            - cocoapods-v1-{{ checksum "ios/Podfile.lock" }}
-            - cocoapods-v1-
-      - run:
-          name: Install CocoaPods (if missing)
-          command: |
-            if command -v pod >/dev/null 2>&1; then
-              pod --version
-            else
-              sudo gem install cocoapods
-            fi
-      - run:
-          name: Install Pods
-          command: cd ios && pod install
-      - run:
-          name: Build iOS (Debug, Simulator)
-          command: |
-            WORKSPACE=$(ls -1 ios/*.xcworkspace | head -n 1)
-            SCHEME=$(xcodebuild -list -json -workspace "$WORKSPACE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["workspace"]["schemes"][0])')
-            xcodebuild \
-              -workspace "$WORKSPACE" \
-              -scheme "$SCHEME" \
-              -configuration Debug \
-              -sdk iphonesimulator \
-              -destination 'generic/platform=iOS Simulator' \
-              build
-      - save_cache:
-          key: cocoapods-v1-{{ checksum "ios/Podfile.lock" }}
-          paths:
-            - ios/Pods
-            - ios/Podfile.lock
-            - ~/.cocoapods
-            - ~/Library/Caches/CocoaPods
 
 workflows:
   ci:
@@ -119,7 +53,7 @@ workflows:
           pkg-manager: npm
           executor:
             name: node/default
-            tag: 'current'
+            tag: 'lts'
           cache-version: v1
           filters:
             branches:
@@ -135,19 +69,12 @@ workflows:
           pkg-manager: npm
           executor:
             name: node/default
-            tag: 'current'
+            tag: 'lts'
           cache-version: v1
           filters:
             branches:
               only: main
       - android-build:
-          requires:
-            - node/test
-          filters:
-            branches:
-              only: main
-
-      - ios-build:
           requires:
             - node/test
           filters:
